@@ -1,0 +1,349 @@
+<html>
+<head>
+<title>Gamepad Overlay</title>
+<style type="text/css">
+body {
+  background-color: #0f0;
+}
+
+.button {
+	border: 2px solid black;
+  border-radius: 50%;
+  display: inline-block;
+	width: 1.5em;
+	height: 1.5em;
+}
+
+.trigger {
+	border: 2px solid black;
+  display: inline-block;
+	width: 2.5em;
+	height: 0.75em;
+}
+
+.throttle {
+	border: 2px solid black;
+  display: inline-block;
+	width: 1.0em;
+	height: 1.5em;
+}
+
+.stickContainer {
+	border: 2px solid black;
+  border-radius: 50%;
+  display: inline-block;
+	width: 3em;
+	height: 3em;
+  background-color: #eee;
+  position: absolute;
+}
+
+.stick {
+  position: absolute;
+  background-color: #999;
+  border-radius: 50%;
+  display: inline-block;
+	width: 1.5em;
+	height: 1.5em;
+  border: solid 1px red;
+}
+
+.active {
+  background-color: #eee;
+}
+
+.inactive {
+  background-color: #777;
+}
+
+#padoptions {
+  display: none;
+  overflow: hidden;
+  padding-top: 2em;
+}
+
+#gamepad {
+  width: 22em;
+  height: 9em;
+  position: relative;
+}
+
+#b1 {
+  position: absolute;
+  right: 3em;
+  top: 6em;
+}
+
+#b2 {
+  position: absolute;
+  right: 1em;
+  top: 4em;
+}
+
+#b3 {
+  position: absolute;
+  right: 5em;
+  top: 4em;
+}
+
+#b4 {
+  position: absolute;
+  right: 3em;
+  top: 2em;
+}
+
+#b6 {
+  position: absolute;
+  left: 0.5em;
+  top: 0.5em;
+}
+
+#b7 {
+  position: absolute;
+  right: 0.5em;
+  top: 0.5em;
+}
+
+#b8 {
+  position: absolute;
+  left: 9em;
+  top: 2em;
+}
+
+#b9 {
+  position: absolute;
+  right: 9em;
+  top: 2em;
+}
+
+#b12 {
+  position: absolute;
+  left: 3em;
+  top: 2em;
+}
+
+#b13 {
+  position: absolute;
+  left: 3em;
+  top: 6em;
+}
+
+#b14 {
+  position: absolute;
+  left: 1em;
+  top: 4em;
+}
+
+#b15 {
+  position: absolute;
+  left: 5em;
+  top: 4em;
+}
+
+#bL {
+  position: absolute;
+  left: 2em;
+  top: 0.25em;
+}
+
+#bR {
+  position: absolute;
+  right: 2em;
+  top: 0.25em;
+}
+
+#sL {
+  left: 7em;
+  top: 5em;
+}
+
+#sR {
+  right: 7em;
+  top: 5em;
+}
+
+#aL {
+  left: 0.75em;
+  top: 0.75em;
+}
+
+#aR {
+  left: 0.75em;
+  top: 0.75em;
+}
+</style>
+<script type="text/javascript">
+
+let selectedGamepadId = 0;
+let activeGamePad = null;
+let stickMovementMax = 1.5;
+let lastState = [16];
+let frameTimes = [];
+let eleToMove = null;
+let moveOffsetX = 0;
+let moveOffsetY = 0;
+lastState.fill(false);
+
+function activateGamepad() {
+  let gamepads = navigator.getGamepads();
+  if (gamepads != null && gamepads.length > 1) {
+    while (padselector.firstElementChild != null) {
+      padselector.firstElementChild.remove();
+    }
+    for (let i in gamepads) {
+      let padId = document.createTextNode(gamepads[i].id);
+      let padOption = document.createElement("option");
+      padOption.value = i;
+      padOption.appendChild(padId);
+      padselector.appendChild(padOption);
+    }
+    padoptions.style.display = "block";
+  } else {
+    padoptions.style.display = "none";
+    selectedGamepadId = 0;
+  }
+	activeGamePad = gamepads[selectedGamepadId];
+}
+
+function updateButton(gamepad, id, element) {
+  if (lastState[id] != gamepad.buttons[id].pressed) {
+    lastState[id] = !lastState[id];
+    if (lastState[id]) {
+      element.classList.remove("inactive");
+      element.classList.add("active");
+    } else {
+      element.classList.remove("active");
+      element.classList.add("inactive");
+    }
+  }
+}
+
+function updateAnalogue(gamepad, id, element) {
+  element.style.left = (gamepad.axes[id] + 1.0) / 2.0 * stickMovementMax + "em";
+  element.style.top = (gamepad.axes[id + 1] + 1.0) / 2.0 * stickMovementMax + "em";
+}
+
+function updateButtonStyles() {
+  if (activeGamePad == null){
+    activateGamepad();
+    if (activeGamePad == null) return;
+  }
+  updateButton(activeGamePad, 0, b1);
+  updateButton(activeGamePad, 1, b2);
+  updateButton(activeGamePad, 2, b3);
+  updateButton(activeGamePad, 3, b4);
+  updateButton(activeGamePad, 4, bL);
+  updateButton(activeGamePad, 5, bR);
+  updateAnalogue(activeGamePad, 0, aL);
+  updateAnalogue(activeGamePad, 2, aR);
+  updateButton(activeGamePad, 6, b6);
+  updateButton(activeGamePad, 7, b7);
+  updateButton(activeGamePad, 8, b8);
+  updateButton(activeGamePad, 9, b9);
+  updateButton(activeGamePad, 10, aL);
+  updateButton(activeGamePad, 11, aR);
+  updateButton(activeGamePad, 12, b12);
+  updateButton(activeGamePad, 13, b13);
+  updateButton(activeGamePad, 14, b14);
+  updateButton(activeGamePad, 15, b15);
+}
+
+function doFrame() {
+  updateButtonStyles();
+	window.requestAnimationFrame(doFrame);
+}
+
+function newDragEvent(ele, x, y) {
+  eleToMove = ele;
+  moveOffsetX = (eleToMove.getBoundingClientRect().width  + x) >> 1;
+  moveOffsetY = (eleToMove.getBoundingClientRect().height + y) >> 1;
+}
+
+function stopEvent(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function toggleOptions(e) {
+  if (e.button != 0) return;
+  if (e.target == padselector || e.target.parentNode == padselector) return;
+  stopEvent(e);
+  if (padoptions.style.display == "block") {
+    padoptions.style.display = "none";
+  } else if (padselector.firstElementChild != null) {
+    padoptions.style.display = "block";
+  }
+}
+
+function dragMouseDown(e) {
+  stopEvent(e);
+  newDragEvent(e.target, e.layerX, e.layerY);
+}
+
+function dragMouseDownParent(e) {
+  stopEvent(e);
+  newDragEvent(e.target.parentNode, e.layerX, e.layerY);
+}
+
+function dragMouseUp(e) {
+  stopEvent(e);
+  eleToMove = null;
+}
+function dragElement(e) {
+  stopEvent(e);
+  if (eleToMove != null) {
+    eleToMove.style.top = e.clientY - moveOffsetY + "px";
+    eleToMove.style.left = e.clientX - moveOffsetX + "px";
+  }
+}
+
+function selectActiveGamepad(e) {
+  selectedGamepadId = padselector.selectedIndex;
+}
+
+function startListener() {
+  let elemList = document.getElementsByClassName("movable");
+  for (let i in elemList) {
+    elemList[i].onmousedown = dragMouseDown;
+  }
+  elemList = document.getElementsByClassName("parentmovable");
+  for (let i in elemList) {
+    elemList[i].onmousedown = dragMouseDownParent;
+  }
+  document.onmouseup = dragMouseUp;
+  document.onmousemove = dragElement;
+  document.onmousedown = toggleOptions;
+  padselector.onchange = selectActiveGamepad;
+	window.requestAnimationFrame(doFrame);
+}
+</script>
+</head>
+<body onload="startListener()">
+<div id="gamepad">
+  <div id="b1" class="movable button inactive"></div>
+  <div id="b2" class="movable button inactive"></div>
+  <div id="b3" class="movable button inactive"></div>
+  <div id="b4" class="movable button inactive"></div>
+  <div id="bL" class="movable trigger inactive"></div>
+  <div id="bR" class="movable trigger inactive"></div>
+  <div id="sL" class="movable stickContainer">
+    <div id="aL" class="parentmovable stick inactive"></div>
+  </div>
+  <div id="sR" class="movable stickContainer">
+    <div id="aR" class="parentmovable stick inactive"></div>
+  </div>
+  <div id="b6" class="movable throttle inactive"></div>
+  <div id="b7" class="movable throttle inactive"></div>
+  <div id="b8" class="movable throttle inactive"></div>
+  <div id="b9" class="movable throttle inactive"></div>
+  <div id="b12" class="movable button inactive"></div>
+  <div id="b13" class="movable button inactive"></div>
+  <div id="b14" class="movable button inactive"></div>
+  <div id="b15" class="movable button inactive"></div>
+</div>
+<div id ="padoptions">
+  <select id="padselector">
+  </select>
+</div>
+</body>
+</html>
